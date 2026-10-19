@@ -144,6 +144,18 @@ credential_header_metadata =
         _ => False
     _ => False
 
+explicit_http_version : Bool
+explicit_http_version = case parse_url "https://example.com/data" of
+  Left _ => False
+  Right target_url => case make_header "Range" "bytes=10-19" of
+    Left _ => False
+    Right range_header => case render_request_parts_at_version http_one_one (get target_url) [range_header] of
+      Left _ => False
+      Right wire =>
+        http_request_head_text (rendered_request_head wire) ==
+          "GET /data HTTP/1.1\r\nHost: example.com\r\nConnection: close\r\nAccept-Encoding: identity\r\nUser-Agent: idric-net/0.1\r\nRange: bytes=10-19\r\n\r\n" &&
+        byte_count_value (rendered_request_body_length wire) == 0
+
 reject_header_value_injection : Bool
 reject_header_value_injection =
   case make_header "X-Test" "safe\r\nX-Evil: yes" of
@@ -269,6 +281,7 @@ all_pass =
   render_get &&
   render_utf8_post &&
   custom_header_rendering &&
+  explicit_http_version &&
   credential_header_metadata &&
   reject_header_value_injection &&
   reject_framing_header &&
@@ -288,6 +301,7 @@ main = do
   check "GET wire rendering" render_get
   check "POST body length follows UTF-8 bytes" render_utf8_post
   check "caller header rendering" custom_header_rendering
+  check "explicit HTTP/1.1 with a checked range header" explicit_http_version
   check "credential header carries policy metadata" credential_header_metadata
   check "reject CRLF in caller header value" reject_header_value_injection
   check "caller cannot override framing headers" reject_framing_header
