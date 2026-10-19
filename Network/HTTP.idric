@@ -388,11 +388,24 @@ public export
 rendered_request_body_length : RenderedRequest → ByteCount
 rendered_request_body_length (MkRenderedRequest _ _ body_length) = body_length
 
-request_line : http_method → url → String
-request_line method target_url =
+public export
+choice http_version one_of
+  http_one_zero
+  http_one_one
+
+public export
+version_text : http_version → String
+version_text http_one_zero = "HTTP/1.0"
+version_text http_one_one = "HTTP/1.1"
+
+request_line_at_version : http_version → http_method → url → String
+request_line_at_version version method target_url =
   method_text method ++ " " ++
   request_target_text (target target_url) ++
-  " HTTP/1.0\r\n"
+  " " ++ version_text version ++ "\r\n"
+
+request_line : http_method → url → String
+request_line = request_line_at_version http_one_zero
 
 public export
 render_request_parts : request → RenderedRequest
@@ -419,16 +432,16 @@ render_request_parts (post target_url body) =
   in MkRenderedRequest (MkHttpRequestHead wire_head) body body_length
 
 public export
-render_request_parts_with_headers :
-  request → List request_header → Either String RenderedRequest
-render_request_parts_with_headers value headers =
+render_request_parts_at_version :
+  http_version → request → List request_header → Either String RenderedRequest
+render_request_parts_at_version version value headers =
   case validate_request_headers headers of
     Just problem => Left problem
     Nothing =>
       case value of
         get target_url =>
           let wire_head =
-                request_line get_method target_url ++
+                request_line_at_version version get_method target_url ++
                 request_headers_before_body target_url headers ++
                 render_request_headers headers ++
                 "\r\n"
@@ -440,7 +453,7 @@ render_request_parts_with_headers value headers =
         post target_url body =>
           let body_length = utf8_byte_length (http_body_text body)
               wire_head =
-                request_line post_method target_url ++
+                request_line_at_version version post_method target_url ++
                 request_headers_before_body target_url headers ++
                 optional_default_header
                   "Content-Type" "text/plain; charset=utf-8" headers ++
@@ -452,6 +465,11 @@ render_request_parts_with_headers value headers =
                  (MkHttpRequestHead wire_head)
                  body
                  body_length)
+
+public export
+render_request_parts_with_headers :
+  request → List request_header → Either String RenderedRequest
+render_request_parts_with_headers = render_request_parts_at_version http_one_zero
 
 public export
 render_request_with_headers :
