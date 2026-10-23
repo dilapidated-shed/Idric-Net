@@ -39,7 +39,10 @@ It provides:
 - status-class derivation, so any 4xx code is a `client_error` even when unregistered;
 - semantic HTTP methods with safe/idempotent properties for the core registered methods used here;
 - `HttpHeader`, checked caller request headers, explicit credential-sensitive header metadata, `HttpBody`, `ByteCount`, request rendering, and UTF-8 byte length;
-- the eight-case `transport_result` used by ICU instead of a generic integer.
+- finite `transport_result` outcomes used by ICU instead of a generic integer,
+  including truncation, timeout, resource limits, malformed framing, proxy
+  failure and unsupported content encoding. Native code 10 identifies a complete
+  response with an HTTP rejection status; callers retain its status/body.
 
 ## SMS foundation
 

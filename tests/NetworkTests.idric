@@ -255,6 +255,25 @@ transport_exit_codes =
   process_exit_status_bits (process_exit_status response_read_failed) == 7 &&
   process_exit_status_bits (process_exit_status redirect_failed) == 8
 
+expected_http_outcome : Bits8 → transport_result → Bool
+expected_http_outcome 9 response_truncated = True
+expected_http_outcome 10 response_has_http_error_status = True
+expected_http_outcome 11 request_timed_out = True
+expected_http_outcome 12 response_limit_exceeded = True
+expected_http_outcome 13 invalid_response_framing = True
+expected_http_outcome 14 https_proxy_failed = True
+expected_http_outcome 15 unsupported_response_encoding = True
+expected_http_outcome _ _ = False
+
+http_transport_outcomes : Bool
+http_transport_outcomes = all check_code [9, 10, 11, 12, 13, 14, 15]
+  where
+    check_code : Bits8 → Bool
+    check_code code = case transport_result_from_native_code (MkNativeTransportCode code) of
+      known_transport_result result ⇒ expected_http_outcome code result &&
+        process_exit_status_bits (process_exit_status result) ≟ code
+      _ ⇒ False
+
 transport_domain : Bool
 transport_domain =
   transport_zero &&
@@ -266,7 +285,7 @@ transport_domain =
   transport_seven &&
   transport_eight &&
   transport_one_rejected &&
-  transport_exit_codes
+  transport_exit_codes && http_transport_outcomes
 
 all_pass : Bool
 all_pass =
