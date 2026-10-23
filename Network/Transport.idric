@@ -12,6 +12,13 @@ choice transport_result one_of
   request_write_failed
   response_read_failed
   redirect_failed
+  response_truncated
+  response_has_http_error_status
+  request_timed_out
+  response_limit_exceeded
+  invalid_response_framing
+  https_proxy_failed
+  unsupported_response_encoding
 
 public export
 record NativeTransportCode where
@@ -41,6 +48,20 @@ transport_result_from_native_code (MkNativeTransportCode 7) =
   known_transport_result response_read_failed
 transport_result_from_native_code (MkNativeTransportCode 8) =
   known_transport_result redirect_failed
+transport_result_from_native_code (MkNativeTransportCode 9) =
+  known_transport_result response_truncated
+transport_result_from_native_code (MkNativeTransportCode 10) =
+  known_transport_result response_has_http_error_status
+transport_result_from_native_code (MkNativeTransportCode 11) =
+  known_transport_result request_timed_out
+transport_result_from_native_code (MkNativeTransportCode 12) =
+  known_transport_result response_limit_exceeded
+transport_result_from_native_code (MkNativeTransportCode 13) =
+  known_transport_result invalid_response_framing
+transport_result_from_native_code (MkNativeTransportCode 14) =
+  known_transport_result https_proxy_failed
+transport_result_from_native_code (MkNativeTransportCode 15) =
+  known_transport_result unsupported_response_encoding
 transport_result_from_native_code code = unknown_transport_code code
 
 public export
@@ -58,3 +79,10 @@ process_exit_status tls_connect_failed = MkProcessExitStatus 5
 process_exit_status request_write_failed = MkProcessExitStatus 6
 process_exit_status response_read_failed = MkProcessExitStatus 7
 process_exit_status redirect_failed = MkProcessExitStatus 8
+process_exit_status response_truncated = MkProcessExitStatus 9
+process_exit_status response_has_http_error_status = MkProcessExitStatus 10
+process_exit_status request_timed_out = MkProcessExitStatus 11
+process_exit_status response_limit_exceeded = MkProcessExitStatus 12
+process_exit_status invalid_response_framing = MkProcessExitStatus 13
+process_exit_status https_proxy_failed = MkProcessExitStatus 14
+process_exit_status unsupported_response_encoding = MkProcessExitStatus 15
